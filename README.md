@@ -1,5 +1,5 @@
 # README
 
-Testing travis
+Testing travis ci
 
 * ...
