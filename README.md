@@ -1,5 +1,3 @@
 # README
 
 Testing travis ci
-
-* ...
