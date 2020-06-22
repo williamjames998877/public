@@ -19,6 +19,7 @@ jobs:
         - "bundle exec rake db:create db:migrate"
 notifications:
   email:
+    - shairyarbaig@gmail.com
+    - shairyar@travis-ci.org
     recipients:
-      - shairyarbaig@gmail.com
       - shairyar@travis-ci.org
