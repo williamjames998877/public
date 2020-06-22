@@ -21,6 +21,3 @@ notifications:
   email:
     - shairyarbaig@gmail.com
     - shairyar@travis-ci.org
-    recipients:
-      - shairyar@travis-ci.org
-      
