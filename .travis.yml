@@ -17,8 +17,3 @@ jobs:
         - "gem install bundler"
       before_script:
         - "bundle exec rake db:create db:migrate"
-notifications:
-  email:
-    - shairyarbaig@gmail.com
-    - shairyar@travis-ci.org
-    - shairyar@travis-ci.com
