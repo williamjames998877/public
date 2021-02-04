@@ -13,8 +13,6 @@ jobs:
   include:
     - stage: "rspec"
       script: bundle exec rspec
-      before_install:
-        - "gem install bundler"
       before_script:
         - "bundle exec rake db:create db:migrate"
 notifications:
