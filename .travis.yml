@@ -1,5 +1,5 @@
 language: ruby
-os: linux
+os: osx
 dist: xenial
 
 addons:
