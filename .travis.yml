@@ -9,7 +9,9 @@ rvm: 2.6.3
 
 cache: bundler
 
-script: sleep 15
+
+before_script:
+  - "sleep 15"
 
 jobs:
   include:
