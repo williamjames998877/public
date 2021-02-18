@@ -1,6 +1,6 @@
 
 
-script: sleep 10
-script: sleep 10
+before_script:
+  - sleep 15
 
 
