@@ -9,11 +9,11 @@ rvm: 2.6.3
 
 cache: bundler
 
-
+before_script:
+  - sleep 15
 
 jobs:
   include:
-    - sleep 15
     - stage: "rspec"
       script: bundle exec rspec
       before_script:
