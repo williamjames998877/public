@@ -16,7 +16,6 @@ env:
 
 script: sleep 10
 script: sleep 10
-script: sleep 10
 
 #jobs:
 #  include:
