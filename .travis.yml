@@ -9,8 +9,7 @@ rvm: 2.6.3
 
 cache: bundler
 
-vm:
-  size: large
+script: sleep 15
 
 jobs:
   include:
