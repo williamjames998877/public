@@ -2,24 +2,25 @@ language: ruby
 os: linux
 dist: xenial
 
-addons:
-  postgresql: 9.6
+env:
+  - INDEX=1
+  - INDEX=2
+  - INDEX=3
+  - INDEX=4
+  - INDEX=5
+  - INDEX=6
+  - INDEX=7
+  - INDEX=8
+  - INDEX=9
+  - INDEX=10
 
-rvm: 2.6.3
+script: sleep 10
+script: sleep 10
+script: sleep 10
 
-cache: bundler
-
-before_script:
-  - sleep 15
-
-jobs:
-  include:
-    - stage: "rspec"
-      script: bundle exec rspec
-      before_script:
-        - "bundle exec rake db:create db:migrate"
-notifications:
-  email:
-    - shairyarbaig@gmail.com
-    - shairyar@travis-ci.org
-    - shairyar@travis-ci.com
+#jobs:
+#  include:
+#    - stage: "rspec"
+#      script: bundle exec rspec
+#      before_script:
+#        - "bundle exec rake db:create db:migrate"
