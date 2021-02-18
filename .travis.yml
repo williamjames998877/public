@@ -1,25 +1,6 @@
-#language: ruby
-#os: linux
-#dist: xenial
-#
-#env:
-#  - INDEX=1
-#  - INDEX=2
-#  - INDEX=3
-#  - INDEX=4
-#  - INDEX=5
-#  - INDEX=6
-#  - INDEX=7
-#  - INDEX=8
-#  - INDEX=9
-#  - INDEX=10
+
 
 script: sleep 10
 script: sleep 10
 
-#jobs:
-#  include:
-#    - stage: "rspec"
-#      script: bundle exec rspec
-#      before_script:
-#        - "bundle exec rake db:create db:migrate"
+
