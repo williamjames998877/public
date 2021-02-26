@@ -10,7 +10,6 @@ jobs:
   - stage: "rspec"
 script: bundle exec rspec
 before_install:
-  - sleep 1500
   - "gem install bundler"
 before_script:
   - "bundle exec rake db:create db:migrate"
