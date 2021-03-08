@@ -14,23 +14,10 @@ vm:
 
 jobs:
   include:
-    - os: linux
-      language: c
-      arch: amd64
-      vm:
-        size: medium
-      script:
-        - clang -coverage -O0 hello_world.c -o hello_world
-        - ./hello_world
-    - os: linux
-      language: ruby
-      dist: xenial
-      arch: amd64
-      vm:
-        size: large
-      script:
-        - clang -coverage -O0 hello_world.c -o hello_world
-        - ./hello_world
+    - stage: "rspec"
+      script: bundle exec rspec
+      before_script:
+        - "bundle exec rake db:create db:migrate"
 notifications:
   email:
     - shairyarbaig@gmail.com
