@@ -1,23 +1,10 @@
- language: ruby
-os: osx
-arch: amd64
-
-addons:
-  postgresql: 9.6
-
-rvm: 2.6.3
-
-cache: bundler
-
-
 jobs:
   include:
-    - stage: "rspec"
-      script: bundle exec rspec
-      before_script:
-        - "bundle exec rake db:create db:migrate"
-notifications:
-  email:
-    - shairyarbaig@gmail.com
-    - shairyar@travis-ci.org
-    - shairyar@travis-ci.com
+    - os: windows
+      language: c
+      arch: amd64
+      vm:
+        size: medium
+      script:
+        - clang -coverage -O0 hello_world.c -o hello_world
+        - ./hello_world
