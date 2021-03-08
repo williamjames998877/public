@@ -1,5 +1,6 @@
  language: ruby
-os: linux
+os: osx
+arch: amd64
 dist: xenial
 
 addons:
