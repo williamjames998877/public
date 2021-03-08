@@ -1,6 +1,6 @@
  language: ruby
 os: osx
-dist: xenial
+arch: amd64
 
 addons:
   postgresql: 9.6
