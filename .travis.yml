@@ -1,8 +1,10 @@
 jobs:
   include:
-    - os: windows
+    - os: osx
       language: c
       arch: amd64
+      vm:
+        size: medium
       script:
         - clang -coverage -O0 hello_world.c -o hello_world
         - ./hello_world
