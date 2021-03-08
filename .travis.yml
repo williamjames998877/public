@@ -1,20 +1,32 @@
- language: ruby
-os: linux
-dist: xenial
-
-addons:
-  postgresql: 9.6
-
-rvm: 2.6.3
-
-cache: bundler
-
-vm:
-  size: medium
-
 jobs:
   include:
-    - stage: "rspec"
-      script: bundle exec rspec
-      before_script:
-        - "bundle exec rake db:create db:migrate"
+    - os: osx
+      language: c
+      arch: amd64
+      vm:
+        size: medium
+      script:
+        - clang -coverage -O0 hello_world.c -o hello_world
+        - ./hello_world
+    - os: osx
+      language: c
+      arch: amd64
+      vm:
+        size: medium
+      script:
+        - clang -coverage -O0 hello_world.c -o hello_world
+        - ./hello_world
+    - os: linux
+      language: c
+      dist: xenial
+      arch: amd64
+      vm:
+        size: large
+      script:
+        - clang -coverage -O0 hello_world.c -o hello_world
+        - ./hello_world
+notifications:
+  email:
+    - shairyarbaig@gmail.com
+    - shairyar@travis-ci.org
+    - shairyar@travis-ci.com
