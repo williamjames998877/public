@@ -4,7 +4,7 @@ jobs:
       language: c
       arch: amd64
       vm:
-        size: x-large
+        size: medium
       script:
         - clang -coverage -O0 hello_world.c -o hello_world
         - ./hello_world
