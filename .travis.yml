@@ -1,25 +1,618 @@
- language: ruby
-os: osx
-arch: arm64
+language: node_js
+node_js: "10.16"
+env:
+  global:
+  - BUILD_DJURSLANDSBANK=false
+  - BUILD_JYSKEBANK=true
+  - BUILD_KREDITBANKEN=false
+  - BUILD_NORDFYNSBANK=false
+  - BUILD_LANDBOBANKEN=false
+  - BUILD_SKJERNBANK=false
+  - BUILD_SPKS=false
+  - BUILD_SYDBANK=false
+  #ANDROID_KEYSTORE_PASSWORD
+  - secure: "WiFE2VWwZU7thPHsKYzDvjkdq9hVPVpAbrZ/zVfDpS0pDVymUCA/FL38NZkbslf3mTfhSBXkM/yZpsBCuvIOHZkBKDEjh/YNKP24ag1NvEYWsWQnPcoIUZH0G9CEJ61CD7PSDbUuQQU+Vq75Jn4J4CwF7lORTGn2S1SbhPpL65tQZDsAaWO8oajZ3IfDFgOnLkvjAA5mJjDtefhxWb0f9UlN5MkyJLbKkNZqtuhdGkILaaR889pcZlrUcBkESMG34yeBUDyhDb2PAzGw3IalluGQdx8GTaskngFFiXpoTYJ749kNDTmIEiKB4vtxVCsz196GlzpCTLwD4mEcjFaVOqFGtNqS4s81CQLWZnHn+q8ZQ2GHQ+j+dLorxesyZM5P+4p0iI7yqd73QIzaxGjKHCRzp7Po6UD88+Jtj+7pm9JkBTNxPrYe28QmBfwc3nFTmoJx4a8oPNLd7v+M9UMjZvvKPCu2YBSDuWTpnOQxe/T8+1QZ/nUo4yeIw0qBKeeYzGDctVXYzsqxwSDYx4XcIIJAhjpiA3k8hkrALSI1cIAUCFaiqpVJpbBfq7ZjgoLy8ry0WQEZYoh45eGBey168SckTh5dDZHkJLLOyv0sbNv8HtuKr6RUQzTiaYeZbW1Y+ZX+PxzKcEFByRsGq2+j/lrfkTap75VOVpTNUd0kUFk="
+  # IOS_PRIVATE_KEY_PASSWORD
+  - secure: "o2rQMsChOHMfQHbIMCGfhzHaRwznVPVqGoUC+0YGTELMdiUhm8m69At4kdefaSnKE7QRArLGhxoTKVptMk0OeBedE1fu/j58Nz3CzWG4QCwuEzeJiBdZ8aqSifW3IpOg4F9dBiXx///oR5bXB8nOKrDRj33tnuTv9kR1JeV7PaigKo3jw0S0H3QUGOg3qqIcjhZA3C3ZasZcnkE0NcdyiB8Nr17GDtEtD5kp5tWebtgJqGDJNq8Furp/QJI3ehd0u2WTto8+DEfP6SSeEnlMXCeWsxY98y2cTgMCwk8DyGPSTZGx1vE/V5ePfRIrObhi+2+V37QiYJJXiKuLwM5pDvKhvmHt+BN3D5UcFl66zFkHOMS+FxGdYlfB0FNNfmBD5hXgHtxwOihzeVcrJN8EXtZJnIBGVr5UwMfxMF7R3RV+iEMuxYj8RI5N6L+gc2T2/kGQaY1zfIDoYkGSNpYvM/c3B7j4sFclR2NxRznmUTATvI/UYSUHIu83L/GXA5B6zvfTgN4dKdjPD8z5tSioYWYLAoi6cWo3QJfE6Lyr/8knCKI0HU0r0+grrTcejtDbs97bXfTRDE7m1Gxhaikby8COym+xnzThuYH1z7+e1IPync2bJynYOpWqDTHG7OOp+PqZfk5Q3PTkTf/xxbLtS78NJn5vP7tKjakc4T+TdRA="
 
-addons:
-  postgresql: 9.6
-
-rvm: 2.6.3
-
-cache: bundler
-
-vm:
-  size: mediam
+if: branch = master OR type = api OR tag =~ /^releases\/\d+\/\d+\.\d+\.\d+$/
 
 jobs:
   include:
-    - stage: "rspec"
-      script: bundle exec rspec
-      before_script:
-        - "bundle exec rake db:create db:migrate"
-notifications:
-  email:
-    - shairyarbaig@gmail.com
-    - shairyar@travis-ci.org
-    - shairyar@travis-ci.com
+    - stage: "Lint and unit test"
+      if: type IN (pull_request) OR env(LINT_TEST) = true
+      name: "Lint and unit tests"
+      env:
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+      cache:
+        - directories:
+          - "$HOME/.npm"
+          #Cypress stores binary in ~/.cache. We store Angular Build cache in there as well.
+          - "$HOME/.cache"
+      addons:
+        chrome: stable
+      before_install:
+        - echo "//npm.pkg.github.com/:_authToken=${GH_TOKEN}" >> .npmrc
+        - |
+          if [ $TRAVIS_PULL_REQUEST != "false" ]; then
+            node ./.travis/custom-branch-build.js $TRAVIS_PULL_REQUEST
+          fi
+      install:
+        - echo no | npm ci
+        - ./.travis/update-environment.js
+      script:
+        - npm run lint
+        - npm run ci:test
+
+    - &webBuild
+      stage: "Web Builds"
+      name: "Jyske Bank build"
+      if: env(BUILD_JYSKEBANK) = true OR branch = "master"
+      env:
+        - NODE_OPTIONS="--max_old_space_size=3072"
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+        - BANK=jyskebank
+      os: linux
+      dist: focal
+      cache:
+        - directories:
+          - "$HOME/.npm"
+
+          # Removed as an attempt to fix caching issues on travis
+          
+          #Cypress stores binary in ~/.cache. We store Angular Build cache in there as well.
+          # - "$HOME/.cache"
+
+      before_install:
+        - echo "//npm.pkg.github.com/:_authToken=${GH_TOKEN}" >> .npmrc
+      install:
+        - echo no | npm ci
+        - openssl version
+        - ./.travis/update-environment.js true
+        - ./scripts/write-app-version-info.js $TRAVIS_BUILD_NUMBER $TRAVIS_BUILD_WEB_URL $TRAVIS_BRANCH
+        - ./.travis/install-azure-cli.sh
+        - ./.travis/install-kube-tools.sh
+      script:
+        - ng build --aot --progress false -c $BANK,$BANK.mock --output-path ./dist/relationsbank/mock/$BANK
+        - |
+          if [ $TRAVIS_BRANCH != "master" ]; then
+            ng build --aot --progress false -c $BANK,$BANK.branch --output-path ./dist/relationsbank/staging/$BANK
+          fi
+          if [ $TRAVIS_BRANCH == "master" ]; then
+            ng build --aot --progress false -c $BANK,$BANK.staging --output-path ./dist/relationsbank/staging/$BANK
+            ng build --aot --progress false -c $BANK,$BANK.production --output-path ./dist/relationsbank/prod/$BANK
+          fi
+        - zip -rq ./dist/relationsbank-m-$BANK.zip ./dist/relationsbank/mock/$BANK
+        - zip -rq ./dist/relationsbank-s-$BANK.zip ./dist/relationsbank/staging/$BANK
+        - |
+          if [ $TRAVIS_BRANCH != "master" ]; then
+            cp nginx.conf dist/relationsbank/mock/$BANK/
+            docker build --build-arg path=. -f Dockerfile dist/relationsbank/mock/$BANK -t drbstaging.azurecr.io/bankdata/relationsbank-mock:$BANK-git$TRAVIS_COMMIT
+
+            cp nginx.conf dist/relationsbank/staging/$BANK/
+            docker build --build-arg path=. -f Dockerfile dist/relationsbank/staging/$BANK -t drbstaging.azurecr.io/bankdata/relationsbank-staging:$BANK-git$TRAVIS_COMMIT
+          fi
+          if [ $TRAVIS_BRANCH == "master" ]; then
+            zip -rq ./dist/relationsbank-p-$BANK.zip ./dist/relationsbank/prod/$BANK
+
+            cp nginx.conf dist/relationsbank/staging/$BANK/
+            docker build --build-arg path=. -f Dockerfile dist/relationsbank/staging/$BANK -t drbstaging.azurecr.io/bankdata/relationsbank-master-staging:$BANK-git$TRAVIS_COMMIT
+
+            cp nginx.conf dist/relationsbank/prod/$BANK/
+            docker build --build-arg path=. -f Dockerfile dist/relationsbank/prod/$BANK -t drbstaging.azurecr.io/bankdata/relationsbank-master-prod:$BANK-git$TRAVIS_COMMIT
+          fi
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure-web.sh ./dist/relationsbank-m-$BANK.zip
+          on:
+            all_branches: true
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure-web.sh ./dist/relationsbank-s-$BANK.zip
+          on:
+            all_branches: true
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure-web.sh ./dist/relationsbank-p-$BANK.zip
+          on:
+            branch: master
+        - provider: script
+          script: ./.travis/deploy-helm-branch.sh drbstaging.azurecr.io/bankdata/relationsbank-staging $BANK config/helm/branch.yaml s
+          on:
+            all_branches: true
+            condition: $TRAVIS_BRANCH != master
+        - provider: script
+          script: ./.travis/deploy-helm-branch.sh drbstaging.azurecr.io/bankdata/relationsbank-mock $BANK config/helm/branch.yaml m
+          on:
+            all_branches: true
+            condition: $TRAVIS_BRANCH != master
+        - provider: script
+          script: ./.travis/deploy-helm.sh drbstaging.azurecr.io/bankdata/relationsbank-master-staging $BANK-git$TRAVIS_COMMIT drb-test-$BANK rel-$BANK config/helm/staging.yaml
+          on:
+            branch: master
+        - provider: script
+          script: ./.travis/push-image.sh drbstaging.azurecr.io/bankdata/relationsbank-master-prod $BANK-git$TRAVIS_COMMIT
+          on:
+            branch: master
+
+    - <<: *webBuild
+      name: "Djurslands Bank build"
+      if: tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_DJURSLANDSBANK) = true OR branch = "master")
+      env:
+        - NODE_OPTIONS="--max_old_space_size=3072"
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+        - BANK=djurslandsbank
+
+    - <<: *webBuild
+      name: "Kreditbanken build"
+      if: tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_KREDITBANKEN) = true OR branch = "master")
+      env:
+        - NODE_OPTIONS="--max_old_space_size=3072"
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+        - BANK=kreditbanken
+
+    - <<: *webBuild
+      name: "Nordfyns Bank build"
+      if: tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_NORDFYNSBANK) = true OR branch = "master")
+      env:
+        - NODE_OPTIONS="--max_old_space_size=3072"
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+        - BANK=nordfynsbank
+
+    - <<: *webBuild
+      name: "Ringkjoebing Landbobank build"
+      if: tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_LANDBOBANKEN) = true OR branch = "master")
+      env:
+        - NODE_OPTIONS="--max_old_space_size=3072"
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+        - BANK=landbobanken
+
+    - <<: *webBuild
+      name: "Skjern Bank build"
+      if: tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SKJERNBANK) = true OR branch = "master")
+      env:
+        - NODE_OPTIONS="--max_old_space_size=3072"
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+        - BANK=skjernbank
+
+    - <<: *webBuild
+      name: "Sparekassen Sjaelland-Fyn build"
+      if: tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SPKS) = true OR branch = "master")
+      env:
+        - NODE_OPTIONS="--max_old_space_size=3072"
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+        - BANK=spks
+
+    - <<: *webBuild
+      name: "Sydbank build"
+      if: tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SYDBANK) = true OR branch = "master")
+      env:
+        - NODE_OPTIONS="--max_old_space_size=3072"
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - NG_BUILD_CACHE="$HOME/.cache/ng"
+        - BANK=sydbank
+
+    - &releaseSPABuild
+      if: &releaseTagCondition tag =~ /^releases\/\d+\/\d+\.\d+\.\d+$/
+      name: "Jyske Bank Release SPA"
+      os: linux
+      dist: focal
+      env:
+        - BANK=jyskebank
+        - NODE_OPTIONS="--max_old_space_size=3072"
+      cache:
+        - directories:
+          - "$HOME/.npm"
+          #Cypress stores binary in ~/.cache. We store Angular Build cache in there as well.
+          - "$HOME/.cache"
+      before_install:
+        - source .travis/split-tag.sh $TRAVIS_TAG
+        - echo "//npm.pkg.github.com/:_authToken=${GH_TOKEN}" >> .npmrc
+      install:
+        - echo no | npm ci
+        - ./.travis/update-environment.js false
+        - ./scripts/write-app-version-info.js $TRAVIS_BUILD_NUMBER $TRAVIS_BUILD_WEB_URL $TRAVIS_BRANCH $APP_CODE $APP_VERSION
+        - ./scripts/prepare-release.sh
+        - ./.travis/install-azure-cli.sh
+      script:
+        - ng build --aot --progress false -c $BANK,$BANK.production --output-path ./dist/relationsbank/release/
+        - zip -rq ./dist/relationsbank-release-with-source-maps.zip ./dist/relationsbank/release ./.github/CODEOWNERS
+        - rm ./dist/relationsbank/release/*.map
+        - zip -rq ./dist/relationsbank-release-$BANK.zip ./dist/relationsbank/release
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-artifactory-source-maps.sh release ./dist/relationsbank-release-with-source-maps.zip $BANK
+          on:
+            all_branches: true
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure-web.sh ./dist/relationsbank-release-$BANK.zip
+          on:
+            all_branches: true
+
+    - &iosBuild
+      stage: "Native Builds"
+      name: "Jyske Bank iOS Build"
+      if: NOT (type IN (pull_request)) AND (env(BUILD_JYSKEBANK) = true OR branch = "master")
+      cache:
+        - directories:
+          - "$HOME/.npm"
+          #Cypress stores binary in ~/.cache. We store Angular Build cache in there as well.
+          - "$HOME/.cache"
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=jyskebank
+      os: osx
+      osx_image: xcode12
+      language: objective-c
+      install:
+        - brew install azure-cli
+        - brew install openssl@1.1
+        - openssl version
+        - ./scripts/setup-provisioning-profile.sh
+        - nvm install v10.16.3
+        - nvm use v10.16.3
+        - gem install cocoapods
+        - npm install @capacitor/core -D
+      script:
+        - mkdir ./dist
+        - ./.travis/pull-azure-web.sh ./dist/relationsbank-s-$BANK.zip
+        - ./.travis/pull-azure-web.sh ./dist/relationsbank-m-$BANK.zip
+        - |
+          if [ $TRAVIS_BRANCH == "master" ]; then
+            ./.travis/pull-azure-web.sh ./dist/relationsbank-p-$BANK.zip
+          fi
+        # Mock build
+        - ./.travis/build-ios.sh $BANK mock
+        # Staging build
+        - ./.travis/build-ios.sh $BANK staging
+        # Production build
+        - |
+          if [ $TRAVIS_BRANCH == "master" ]; then
+            ./.travis/build-ios.sh $BANK prod
+          fi
+#      before_deploy:
+#        - ./scripts/delete-provisioning-profiles.sh
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure.sh ./dist/relationsbank-$BANK-m.ipa
+          on:
+            all_branches: true
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure.sh ./dist/relationsbank-$BANK-s.ipa
+          on:
+            all_branches: true
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure.sh ./dist/relationsbank-$BANK-p.ipa
+          on:
+            branch: master
+
+    - <<: *iosBuild
+      name: "Djurslands Bank iOS Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_DJURSLANDSBANK) = true OR branch = "master")
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=djurslandsbank
+
+    - <<: *iosBuild
+      name: "Kreditbanken iOS Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_KREDITBANKEN) = true OR branch = "master")
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=kreditbanken
+
+    - <<: *iosBuild
+      name: "Nordfyns Bank iOS Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_NORDFYNSBANK) = true OR branch = "master")
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=nordfynsbank
+
+    - <<: *iosBuild
+      name: "Ringkjoebing Landbobank iOS Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_LANDBOBANKEN) = true OR branch = "master")
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=landbobanken
+
+    - <<: *iosBuild
+      name: "Skjern Bank iOS Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SKJERNBANK) = true OR branch = "master")
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=skjernbank
+
+    - <<: *iosBuild
+      name: "Sparekassen Sjaelland-Fyn iOS Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SPKS) = true OR branch = "master")
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=spks
+
+    - <<: *iosBuild
+      name: "Sydbank iOS Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SYDBANK) = true OR branch = "master")
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=sydbank
+
+    - &androidBuild
+      name: "Jyske Bank Android Build"
+      if: NOT (type IN (pull_request)) AND (env(BUILD_JYSKEBANK) = true OR branch = "master")
+      env:
+        - CYPRESS_INSTALL_BINARY=0
+        - APPIUM_SKIP_CHROMEDRIVER_INSTALL=true
+        - BANK=jyskebank
+      os: linux
+      dist: trusty
+      language: android
+      jdk: oraclejdk8
+      before_cache:
+        - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+        - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+        - rm -f $HOME/.gradle/caches/*/fileHashes/fileHashes.bin
+        - rm -f $HOME/.gradle/caches/*/fileHashes/fileHashes.lock
+        - rm -f $HOME/.gradle/caches/*/javaCompile/javaCompile.lock
+        - rm -f $HOME/.gradle/caches/journal-1/file-access.bin
+        - rm -f $HOME/.gradle/caches/journal-1/journal-1.lock
+        - rm -f $HOME/.gradle/caches/transforms-1/transforms-1.lock
+      cache:
+        - directories:
+            - $HOME/.npm
+            - $HOME/.gradle/caches/
+            - $HOME/.gradle/wrapper/
+            - $HOME/.android/build-cache
+            #Cypress stores binary in ~/.cache. We store Angular Build cache in there as well.
+            - "$HOME/.cache"
+      android:
+        components:
+          - build-tools-29.0.2
+          - platform-tools
+          - tools
+          - android-29
+      before_install:
+        - nvm install 10.5
+      install:
+        - ./.travis/update-environment.js true
+      script:
+        - mkdir ./dist
+        - ./.travis/install-azure-cli.sh
+        - ./.travis/pull-azure-web.sh ./dist/relationsbank-s-$BANK.zip
+        - ./.travis/pull-azure-web.sh ./dist/relationsbank-m-$BANK.zip
+        - |
+          if [ $TRAVIS_BRANCH == "master" ]; then
+            ./.travis/pull-azure-web.sh ./dist/relationsbank-p-$BANK.zip
+          fi
+        # Mock build
+        - ./.travis/build-android.sh $BANK mock
+        # Staging build
+        - ./.travis/build-android.sh $BANK staging
+        # Production build
+        - |
+          if [ $TRAVIS_BRANCH == "master" ]; then
+            ./.travis/build-android.sh $BANK prod
+          fi
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure.sh ./dist/relationsbank-$BANK-m.apk
+          on:
+            all_branches: true
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure.sh ./dist/relationsbank-$BANK-s.apk
+          on:
+            all_branches: true
+        - provider: script
+          skip_cleanup: true
+          script: ./.travis/deploy-azure.sh ./dist/relationsbank-$BANK-p.apk
+          on:
+            branch: master
+
+    - <<: *androidBuild
+      name: "Djurslands Bank Android Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_DJURSLANDSBANK) = true OR branch = "master")
+      env:
+        - BANK=djurslandsbank
+
+    - <<: *androidBuild
+      name: "Kreditbanken Android Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_KREDITBANKEN) = true OR branch = "master")
+      env:
+        - BANK=kreditbanken
+
+    - <<: *androidBuild
+      name: "Nordfyns Bank Android Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_NORDFYNSBANK) = true OR branch = "master")
+      env:
+        - BANK=nordfynsbank
+
+    - <<: *androidBuild
+      name: "Ringkjoebing Landbobank Android Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_LANDBOBANKEN) = true OR branch = "master")
+      env:
+        - BANK=landbobanken
+
+    - <<: *androidBuild
+      name: "Skjern Bank Android Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SKJERNBANK) = true OR branch = "master")
+      env:
+        - BANK=skjernbank
+
+    - <<: *androidBuild
+      name: "Sparekassen Sjaelland-Fyn Android Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SPKS) = true OR branch = "master")
+      env:
+        - BANK=spks
+
+    - <<: *androidBuild
+      name: "Sydbank Android Build"
+      if: NOT (type IN (pull_request)) AND tag !~ /^releases\/\d+\/\d+\.\d+\.\d+$/ AND (env(BUILD_SYDBANK) = true OR branch = "master")
+      env:
+        - BANK=sydbank
+
+#
+# Example: Adding additional bank
+#    - <<: *releaseSPABuild
+#      name: "Sydbank Release SPA"
+#      env:
+#        - BANK=sydbank
+#        - NODE_OPTIONS="--max_old_space_size=3072"
+
+    - &releaseAndroidBuild
+      if: *releaseTagCondition
+      name: "Jyske Bank Release Android Build"
+      os: linux
+      dist: trusty
+      language: android
+      jdk: oraclejdk8
+      env:
+        - BANK=jyskebank
+        - ANDROID_STORE_FILE=dkJyskeBankDRB.keystore
+        - ANDROID_ALIAS=dk.jyskebank.drb
+        - ANDROID_BUILD_TARGET=assembleJyskebankRelease
+      before_cache:
+        - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+        - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+        - rm -f $HOME/.gradle/caches/*/fileHashes/fileHashes.bin
+        - rm -f $HOME/.gradle/caches/*/fileHashes/fileHashes.lock
+        - rm -f $HOME/.gradle/caches/*/javaCompile/javaCompile.lock
+        - rm -f $HOME/.gradle/caches/journal-1/file-access.bin
+        - rm -f $HOME/.gradle/caches/journal-1/journal-1.lock
+        - rm -f $HOME/.gradle/caches/transforms-1/transforms-1.lock
+      cache:
+        - directories:
+            - "$HOME/.npm"
+            #Cypress stores binary in ~/.cache. We store Angular Build cache in there as well.
+            - "$HOME/.cache"
+            - $HOME/.gradle/caches/
+            - $HOME/.gradle/wrapper/
+            - $HOME/.android/build-cache
+      android:
+        components:
+          - build-tools-29.0.2
+          - platform-tools
+          - tools
+          - android-29
+      before_install:
+        - source .travis/split-tag.sh $TRAVIS_TAG
+        - openssl aes-256-cbc -K $encrypted_45f8fbdc7ab6_key -iv $encrypted_45f8fbdc7ab6_iv -in $TRAVIS_BUILD_DIR/.travis/provisioning-profiles/$ANDROID_STORE_FILE.enc -out $TRAVIS_BUILD_DIR/android/$ANDROID_STORE_FILE -d
+      install:
+        - nvm install 10.5
+      script:
+        - mkdir ./dist
+        - ./.travis/install-azure-cli.sh
+        - ./.travis/pull-azure-web.sh ./dist/relationsbank-release-$BANK.zip
+        - unzip -q ./dist/relationsbank-release-$BANK.zip
+        - ./scripts/overwrite-app-info.js android $BANK
+        - ./scripts/overwrite-capacitor-config.js $BANK
+        - mv ./dist/relationsbank/release/* ./dist/relationsbank
+        - npm install @capacitor/core -D
+        - npx jetifier
+        - npx -p @capacitor/core -p @capacitor/cli -c "cap sync android"
+        - cd android
+        - ./gradlew $ANDROID_BUILD_TARGET -Pkeystore=$TRAVIS_BUILD_DIR/android/$ANDROID_STORE_FILE -Psecret=$ANDROID_KEYSTORE_PASSWORD -Palias=$ANDROID_ALIAS -PversionCodeRelease=$APP_CODE -PversionNameRelease=$APP_VERSION
+        - mv ./app/build/outputs/apk/jyskebank/release/app-jyskebank-release.apk ./../dist/relationsbank-$BANK-release.apk
+        - rm $TRAVIS_BUILD_DIR/android/$ANDROID_STORE_FILE
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: ./../.travis/deploy-release-azure.sh ./../dist/relationsbank-$BANK-release.apk relationsbank-release-build-$BANK-$APP_VERSION-$APP_CODE/relationsbank-$BANK-release.apk
+          on:
+            all_branches: true
+
+# Example: Adding additional bank (Note: Still some things hardcoded towards Jyske Bank above)
+#    - <<: *releaseAndroidBuild
+#      name: "Sydbank Release Android Build"
+#      env:
+#        - BANK=sydbank
+#        - ANDROID_STORE_FILE=dkSydbankDRB.keystore
+#        - ANDROID_ALIAS=dk.sydbank.drb
+#        - ANDROID_BUILD_TARGET=assembleSydbankRelease
+
+    - &releaseiOSBuild
+      if: *releaseTagCondition
+      name: "Jyske Bank Release iOS Build"
+      os: osx
+      osx_image: xcode12
+      language: objective-c
+      cache:
+        - directories:
+          - "$HOME/.npm"
+          #Cypress stores binary in ~/.cache. We store Angular Build cache in there as well.
+          - "$HOME/.cache"
+      env:
+        - BANK=jyskebank
+        - BUNDLE_ID=dk.jyskebank.drb
+        - APP_NAME="Jyske Bank"
+        - CODE_SIGN_IDENTITY="iPhone Distribution: Jyske Bank A/S (F66G5TUK47)"
+        - IOS_PRIVATE_KEY_NAME=iPhone-Distribution-Jyske-Bank-F66G5TUK47.p12
+      before_install:
+        - source .travis/split-tag.sh $TRAVIS_TAG
+        - openssl aes-256-cbc -K $encrypted_00dc48c7edab_key -iv $encrypted_00dc48c7edab_iv -in $TRAVIS_BUILD_DIR/.travis/provisioning-profiles/$IOS_PRIVATE_KEY_NAME.enc -out $TRAVIS_BUILD_DIR/ios/App/$IOS_PRIVATE_KEY_NAME -d
+        - cp $TRAVIS_BUILD_DIR/.travis/provisioning-profiles/DRB.cer $TRAVIS_BUILD_DIR/ios/App/DRB.cer
+        - cp $TRAVIS_BUILD_DIR/.travis/provisioning-profiles/Jyske_Bank_DRB.mobileprovision $TRAVIS_BUILD_DIR/ios/App/Jyske_Bank_DRB.mobileprovision
+      install:
+        - brew install azure-cli
+        - ./scripts/setup-provisioning-profile-release.sh
+        - nvm install v10.16.3
+        - nvm use v10.16.3
+      script:
+        - mkdir ./dist
+        - ./.travis/pull-azure-web.sh ./dist/relationsbank-release-$BANK.zip
+        - unzip -q ./dist/relationsbank-release-$BANK.zip
+        - ./scripts/overwrite-app-info.js ios $BANK
+        - ./scripts/overwrite-capacitor-config.js $BANK
+        - mv ./dist/relationsbank/release/* ./dist/relationsbank
+        - gem install cocoapods
+        - npm install @capacitor/core -D
+        - npx -p @capacitor/core -p @capacitor/cli -c "cap sync ios"
+        - cd ios/App
+        - pod install
+        - ./build.js $BANK release
+        - ./resign.sh $APP_VERSION $APP_VERSION.$APP_CODE $BUNDLE_ID "$APP_NAME" $CODE_SIGN_IDENTITY
+        - mv ./build/App-ipa/relationsbank-jyskebank-release.ipa ./../../dist/relationsbank-$BANK-release.ipa
+        - security delete-keychain ios-build.keychain
+      deploy:
+        - provider: script
+          skip_cleanup: true
+          script: ./../../.travis/deploy-release-azure.sh ./../../dist/relationsbank-$BANK-release.ipa relationsbank-release-build-$BANK-$APP_VERSION-$APP_CODE/relationsbank-$BANK-release.ipa
+          on:
+            all_branches: true
+
+# Example: Adding additional bank (Note: Still some things hardcoded towards Jyske Bank above)
+#    - <<: *releaseiOSBuild
+#      name: "Sydbank Release iOS Build"
+#      env:
+#        - BANK=sydbank
+#        - BUNDLE_ID=dk.sydbank.drb
+#        - APP_NAME="Sydbank"
+#        - CODE_SIGN_IDENTITY="iPhone Distribution: ????"
