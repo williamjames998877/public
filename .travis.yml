@@ -1,6 +1,6 @@
  language: ruby
 os: osx
-arch: amd64
+arch: arm64
 
 addons:
   postgresql: 9.6
