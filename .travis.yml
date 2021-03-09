@@ -1,20 +1,10 @@
- language: ruby
-os: osx
-arch: arm64
-
-addons:
-  postgresql: 9.6
-
-rvm: 2.6.3
-
-cache: bundler
-
-vm:
-  size: medium
-
-jobs:
+    jobs:
   include:
-    - stage: "rspec"
-      script: bundle exec rspec
-      before_script:
-        - "bundle exec rake db:create db:migrate"
+    - os: osx
+      language: ruby
+      arch: arm64
+      vm:
+        size: medium
+      script:
+        - clang -coverage -O0 hello_world.c -o hello_world
+        - ./hello_world
