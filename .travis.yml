@@ -1,5 +1,5 @@
  language: ruby
-os: linux
+os: freebsd
 arch: amd64
 
 addons:
