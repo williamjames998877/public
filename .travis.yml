@@ -1,6 +1,6 @@
 jobs:
   include:
-    - os: osx
+    - os: linux
       language: ruby
       arch: amd64
       vm:
