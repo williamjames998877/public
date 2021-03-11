@@ -4,7 +4,7 @@ jobs:
       language: ruby
       arch: amd64
       vm:
-        size: medium
+        size: 2x-large
       script:
         - clang -coverage -O0 hello_world.c -o hello_world
         - ./hello_world
