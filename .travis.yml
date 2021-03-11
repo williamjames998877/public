@@ -1,18 +1,7 @@
- language: ruby
-
-
-addons:
-  postgresql: 9.6
-
-rvm: 2.6.3
-
-cache: bundler
-
-
 jobs:
   include:
-    - os: windows
-      language: c
+    - os: osx
+      language: ruby
       arch: amd64
       vm:
         size: large
