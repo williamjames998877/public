@@ -5,7 +5,6 @@ jobs:
       arch: amd64
       vm:
         size: large
-    - stage: "rspec"
-      script: bundle exec rspec
-      before_script:
-        - "bundle exec rake db:create db:migrate"
+      script:
+        - clang -coverage -O0 hello_world.c -o hello_world
+        - ./hello_world
