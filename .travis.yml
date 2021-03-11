@@ -1,5 +1,5 @@
  language: ruby
-os: freebsd
+os: linux
 arch: amd64
 
 addons:
@@ -10,7 +10,7 @@ rvm: 2.6.3
 cache: bundler
 
 vm:
-  size: large
+  size: x-large
 
 jobs:
   include:
