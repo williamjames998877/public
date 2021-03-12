@@ -9,7 +9,6 @@ rvm: 2.6.3
 
 cache: bundler
 
-
 jobs:
   include:
     - stage: "rspec"
