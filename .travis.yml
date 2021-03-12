@@ -1,6 +1,6 @@
  language: ruby
 os: linux
-arch: arm64
+arch: s390x
 
 addons:
   postgresql: 9.6
