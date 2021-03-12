@@ -1,6 +1,6 @@
  language: ruby
 os: linux
-arch: s390x
+arch: ppc64le
 
 addons:
   postgresql: 9.6
@@ -8,6 +8,7 @@ addons:
 rvm: 2.6.3
 
 cache: bundler
+
 
 jobs:
   include:
