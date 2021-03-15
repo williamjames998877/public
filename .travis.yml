@@ -11,17 +11,3 @@ jobs:
     - stage: "rspec"
       before_script:
         - "bundle exec rake db:create db:migrate"
-
-jobs:
-  include:
-    - os: linux
-      language: ruby
-      arch: amd64
-      vm:
-        size: medium
-      script:
-        - clang -coverage -O0 hello_world.c -o hello_world
-        - ./hello_world
-    - stage: "rspec"
-      before_script:
-        - "bundle exec rake db:create db:migrate"
