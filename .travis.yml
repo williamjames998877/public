@@ -1,6 +1,6 @@
 jobs:
   include:
-    - os: linux
+    - os: osx
       language: ruby
       arch: amd64
       vm:
@@ -14,7 +14,7 @@ jobs:
 
 jobs:
   include:
-    - os: linux
+    - os: osx
       language: ruby
       arch: amd64
       vm:
@@ -28,7 +28,7 @@ jobs:
 
 jobs:
   include:
-    - os: linux
+    - os: osx
       language: ruby
       arch: amd64
       vm:
