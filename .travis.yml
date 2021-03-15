@@ -9,7 +9,6 @@ jobs:
         - clang -coverage -O0 hello_world.c -o hello_world
         - ./hello_world
     - stage: "rspec"
-      script: bundle exec rspec
       before_script:
         - "bundle exec rake db:create db:migrate"
 
@@ -24,7 +23,6 @@ jobs:
         - clang -coverage -O0 hello_world.c -o hello_world
         - ./hello_world
     - stage: "rspec"
-      script: bundle exec rspec
       before_script:
         - "bundle exec rake db:create db:migrate"
 
@@ -39,7 +37,6 @@ jobs:
         - clang -coverage -O0 hello_world.c -o hello_world
         - ./hello_world
     - stage: "rspec"
-      script: bundle exec rspec
       before_script:
         - "bundle exec rake db:create db:migrate"
 
@@ -54,7 +51,6 @@ jobs:
         - clang -coverage -O0 hello_world.c -o hello_world
         - ./hello_world
     - stage: "rspec"
-      script: bundle exec rspec
       before_script:
         - "bundle exec rake db:create db:migrate"
         
