@@ -57,3 +57,4 @@ jobs:
       script: bundle exec rspec
       before_script:
         - "bundle exec rake db:create db:migrate"
+        
