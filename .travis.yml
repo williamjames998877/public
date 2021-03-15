@@ -1,11 +1,20 @@
+ language: ruby
+os: linux
+arch: arm64
+
+addons:
+  postgresql: 9.6
+
+rvm: 2.6.3
+
+cache: bundler
+
+vm:
+    size: medium
+
 jobs:
   include:
-    - os: linux
-      language: ruby
-      arch: amd64
-      vm:
-        size: large
-      script:
-        - clang -coverage -O0 hello_world.c -o hello_world
-        - ./hello_world
-
+    - stage: "rspec"
+      script: bundle exec rspec
+      before_script:
+        - "bundle exec rake db:create db:migrate"
