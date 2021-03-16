@@ -10,8 +10,7 @@ rvm: 2.6.3
 cache: bundler
 
 vm:
-  size: large
-
+  size: medium
 
 jobs:
   include:
