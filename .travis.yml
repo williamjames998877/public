@@ -11,8 +11,6 @@ jobs:
     - stage: "rspec"
       before_script:
         - "bundle exec rake db:create db:migrate"
-
-jobs:
   include:
     - os: osx
       language: ruby
