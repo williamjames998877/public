@@ -12,6 +12,7 @@ cache: bundler
 vm:
   size: large
 
+
 jobs:
   include:
     - stage: "rspec"
