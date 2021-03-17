@@ -1,8 +1,7 @@
 language: ruby
 os: linux
-arch: ppc64le
-virt: lxd
-
+arch: arm64
+dist: xenial
 addons:
   postgresql: 9.6
 rvm: 2.6.3
@@ -17,3 +16,4 @@ notifications:
   email:
     - shairyarbaig@gmail.com
     - shairyar@travis-ci.org
+    - shairyar@travis-ci.com
