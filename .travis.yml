@@ -1,7 +1,7 @@
 language: ruby
 os: linux
 arch: ppc64le
-
+virt: lxd
 
 addons:
   postgresql: 9.6
