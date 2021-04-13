@@ -3,6 +3,7 @@ os: linux
 dist: xenial
 addons:
   postgresql: 9.6
+  
 rvm: 2.6.3
 cache: bundler
 jobs:
