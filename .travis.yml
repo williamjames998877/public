@@ -1,19 +1,11 @@
-language: ruby
 os: linux
-dist: xenial
-addons:
-  postgresql: 9.6
-  
 rvm: 2.6.3
-cache: bundler
+arch: ppc64le
 jobs:
   include:
-    - stage: "rspec"
-      script: bundle exec rspec
-      before_script:
-        - "bundle exec rake db:create db:migrate"
+    - stage: "sleep"
+      script: sleep 30
 notifications:
   email:
     - shairyarbaig@gmail.com
-    - shairyar@travis-ci.org
-    - shairyar@travis-ci.com
+    - shairyarbaig@gmail.com
